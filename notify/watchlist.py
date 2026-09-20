@@ -22,6 +22,12 @@ RAW_ASSETS = ["SPY", "QQQ"]
 # Assets to print the same raw snapshot for, minus the SMA100 line.
 RAW_ASSETS_200_ONLY = ["TIP"]
 
+# Watchlist — tickers to show a compact one-line price/SMA100/SMA200 snapshot
+# for. Purely a display panel (no signals, no diffing/alerts). Edit this list
+# directly to add or remove tickers, then commit; picked up on the next
+# scheduled run.
+WATCHLIST = ["NBIS", "BE"]
+
 # AND-combined multi-asset gate: risk-on only when EVERY indicator passes,
 # each on its own asset. This is the r/LETFs "Golden Ratio" de-lever signal
 # (see research/golden_ratio_delever.py, variant C, and the robustness-grid

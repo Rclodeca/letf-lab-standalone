@@ -90,5 +90,11 @@ Edit `watchlist.py`:
   shows a `🆘 EMERGENCY` banner at the very top of the message, above the
   regular signal-change banner.
 - `RAW_ASSETS` — which tickers get a raw-values block.
+- `WATCHLIST` — tickers to show a compact one-line price/%-change/SMA100/SMA200
+  snapshot for, e.g. `WATCHLIST = ["AMZN", "NVDA"]`. Display only — no
+  signals, no diffing/alerts, no minimum-history requirement (a too-new
+  ticker just shows `n/a` for whichever SMA doesn't have enough bars yet).
+  Add or remove tickers by editing the list and committing; picked up on the
+  next scheduled run.
 
 No other file needs to change.

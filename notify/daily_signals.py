@@ -50,6 +50,7 @@ from notify.watchlist import (
     RAW_ASSETS_200_ONLY,
     ROTATION_STRATEGIES,
     SWITCH_STRATEGIES,
+    WATCHLIST,
 )
 
 STATE_PATH = Path(__file__).parent / "state" / "last_signals.json"
@@ -89,6 +90,22 @@ def _pct_day_change(prices):
     return (float(s.iloc[-1]) / float(s.iloc[-2]) - 1) * 100.0
 
 
+def _snapshot(prices, include_sma100=True):
+    """Price/day-change/SMA100/SMA200 snapshot, shared by the raw-values
+    panel and the watchlist."""
+    price = _latest(prices)
+    sma200 = _sma(prices, 200)
+    sma100 = _sma(prices, 100) if include_sma100 else None
+    return {
+        "price": price,
+        "pct": _pct_day_change(prices),
+        "sma200": sma200,
+        "sma100": sma100,
+        "pct_vs_200": (price / sma200 - 1) * 100 if price is not None and sma200 else None,
+        "pct_vs_100": (price / sma100 - 1) * 100 if price is not None and sma100 else None,
+    }
+
+
 def compute(prev_signals=None):
     """Return (signals, display, meta).
 
@@ -107,7 +124,7 @@ def compute(prev_signals=None):
     # the up-to-date series. On a cold cache this self-heals to a full history.
     assets = (
         {e["asset"] for e in EMERGENCY}
-        | set(RAW_ASSETS) | set(RAW_ASSETS_200_ONLY)
+        | set(RAW_ASSETS) | set(RAW_ASSETS_200_ONLY) | set(WATCHLIST)
         | set(rot.UNIVERSE) | {rot.CASH}
         | set(haa.OFFENSIVE_UNIVERSE) | {haa.CANARY} | set(haa.DEFENSIVE_CANDIDATES)
         | {s["spy_asset"] for s in SWITCH_STRATEGIES} | {s["qqq_asset"] for s in SWITCH_STRATEGIES}
@@ -125,7 +142,7 @@ def compute(prev_signals=None):
     signals = {}
     meta = {}
     display = {
-        "date": None, "raw": [], "emergency": [], "rotation": [], "haa": [],
+        "date": None, "raw": [], "watchlist": [], "emergency": [], "rotation": [], "haa": [],
         "switch": [], "overextension": [], "dual_gate": [],
     }
 
@@ -133,23 +150,18 @@ def compute(prev_signals=None):
     # price/SMA200 only for TIP.
     for asset in RAW_ASSETS + RAW_ASSETS_200_ONLY:
         prices = prices_by_asset[asset]
-        price = _latest(prices)
-        sma200 = _sma(prices, 200)
-        sma100 = _sma(prices, 100) if asset in RAW_ASSETS else None
         d = _latest_date(prices)
         if d and not display["date"]:
             display["date"] = d.isoformat()
         display["raw"].append(
-            {
-                "asset": asset,
-                "price": price,
-                "pct": _pct_day_change(prices),
-                "sma200": sma200,
-                "sma100": sma100,
-                "pct_vs_200": (price / sma200 - 1) * 100 if price is not None and sma200 else None,
-                "pct_vs_100": (price / sma100 - 1) * 100 if price is not None and sma100 else None,
-            }
+            {"asset": asset, **_snapshot(prices, include_sma100=asset in RAW_ASSETS)}
         )
+
+    # 1b. Watchlist — compact price/SMA100/SMA200 snapshot for user-tracked
+    # tickers (see watchlist.py). Display-only: no signals, no diffing/alerts.
+    for asset in WATCHLIST:
+        prices = prices_by_asset[asset]
+        display["watchlist"].append({"asset": asset, **_snapshot(prices)})
 
     # 2. Emergency euphoria-valve checks. Normally hidden; surfaced at the top
     # of the message only when price has run unusually far above its 200SMA.
@@ -514,6 +526,18 @@ def format_message(display, changes, meta):
         if rv.get("median") is not None:
             pctm = f'{rv["pct_vs_median"]:+.2f}%' if rv["pct_vs_median"] is not None else "n/a"
             block.append(f'  Median250  {rv["median"]:.2f}   ({pctm})')
+        block.append("")
+
+    if display["watchlist"]:
+        block.append("Watchlist")
+        for rv in display["watchlist"]:
+            price = f'{rv["price"]:.2f}' if rv["price"] is not None else "n/a"
+            pct = f'{rv["pct"]:+.2f}%' if rv["pct"] is not None else "n/a"
+            pct100 = f'{rv["pct_vs_100"]:+.1f}%' if rv["pct_vs_100"] is not None else "n/a"
+            pct200 = f'{rv["pct_vs_200"]:+.1f}%' if rv["pct_vs_200"] is not None else "n/a"
+            block.append(
+                f'{rv["asset"]} {price} ({pct})  100sma {pct100}  200sma {pct200}'
+            )
         block.append("")
 
     for rt in display["rotation"]:
