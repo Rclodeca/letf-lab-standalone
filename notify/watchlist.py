@@ -16,17 +16,19 @@ EMERGENCY = [
 ]
 
 # Assets to print the full raw snapshot for: day change, price, SMA100,
-# SMA200, and % above/below each SMA.
-RAW_ASSETS = ["SPY", "QQQ"]
+# SMA200, and % above/below each SMA. SPY/QQQ/TIP moved to WATCHLIST below
+# (same underlying numbers, more compact display); left empty rather than
+# removed since a future raw-panel asset can still use this list.
+RAW_ASSETS = []
 
 # Assets to print the same raw snapshot for, minus the SMA100 line.
-RAW_ASSETS_200_ONLY = ["TIP"]
+RAW_ASSETS_200_ONLY = []
 
 # Watchlist — tickers to show a compact one-line price/SMA100/SMA200 snapshot
 # for. Purely a display panel (no signals, no diffing/alerts). Edit this list
 # directly to add or remove tickers, then commit; picked up on the next
-# scheduled run.
-WATCHLIST = ["NBIS", "BE"]
+# scheduled run. SPY/QQQ/TQQQ/TIP kept first as the core reference set.
+WATCHLIST = ["SPY", "QQQ", "TQQQ", "TIP", "NBIS", "BE"]
 
 # AND-combined multi-asset gate: risk-on only when EVERY indicator passes,
 # each on its own asset. This is the r/LETFs "Golden Ratio" de-lever signal

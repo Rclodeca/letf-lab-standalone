@@ -89,12 +89,17 @@ Edit `watchlist.py`:
   200SMA an asset must run to trip). Normally invisible; a triggered check
   shows a `🆘 EMERGENCY` banner at the very top of the message, above the
   regular signal-change banner.
-- `RAW_ASSETS` — which tickers get a raw-values block.
+- `RAW_ASSETS` — which tickers get the detailed raw-values block (price, SMA100,
+  SMA200, each with %-vs-price). Empty by default — SPY/QQQ/TIP moved to
+  `WATCHLIST` for a more compact display; TQQQ stays out of both and gets its
+  own raw block from the SQQQ Overextension strategy (uniquely shows its
+  250-day median, not an SMA).
 - `WATCHLIST` — tickers to show a compact one-line price/%-change/SMA100/SMA200
-  snapshot for, e.g. `WATCHLIST = ["AMZN", "NVDA"]`. Display only — no
-  signals, no diffing/alerts, no minimum-history requirement (a too-new
-  ticker just shows `n/a` for whichever SMA doesn't have enough bars yet).
-  Add or remove tickers by editing the list and committing; picked up on the
-  next scheduled run.
+  snapshot for, e.g. `WATCHLIST = ["SPY", "QQQ", "TQQQ", "TIP", "AMZN"]`.
+  Display only — no signals, no diffing/alerts, no minimum-history requirement
+  (a too-new ticker just shows `n/a` for whichever SMA doesn't have enough
+  bars yet). Add or remove tickers by editing the list and committing; picked
+  up on the next scheduled run. SPY/QQQ/TQQQ/TIP are kept first as the core
+  reference set.
 
 No other file needs to change.

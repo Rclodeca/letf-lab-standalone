@@ -161,6 +161,9 @@ def compute(prev_signals=None):
     # tickers (see watchlist.py). Display-only: no signals, no diffing/alerts.
     for asset in WATCHLIST:
         prices = prices_by_asset[asset]
+        d = _latest_date(prices)
+        if d and not display["date"]:
+            display["date"] = d.isoformat()
         display["watchlist"].append({"asset": asset, **_snapshot(prices)})
 
     # 2. Emergency euphoria-valve checks. Normally hidden; surfaced at the top
