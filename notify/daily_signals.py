@@ -536,7 +536,7 @@ def format_message(display, changes, meta):
             pct100 = f'{rv["pct_vs_100"]:+.1f}%' if rv["pct_vs_100"] is not None else "n/a"
             pct200 = f'{rv["pct_vs_200"]:+.1f}%' if rv["pct_vs_200"] is not None else "n/a"
             block.append(
-                f'{rv["asset"]} {price} ({pct})  100sma {pct100}  200sma {pct200}'
+                f'{rv["asset"]} {price} ({pct}) 1M {pct100} 2M {pct200}'
             )
         block.append("")
 
