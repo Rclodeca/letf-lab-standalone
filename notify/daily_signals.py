@@ -532,11 +532,11 @@ def format_message(display, changes, meta):
         block.append("Watchlist")
         for rv in display["watchlist"]:
             price = f'{rv["price"]:.2f}' if rv["price"] is not None else "n/a"
-            pct = f'({rv["pct"]:+.2f}%)' if rv["pct"] is not None else "(n/a)"
+            pct = f'{rv["pct"]:+.2f}%' if rv["pct"] is not None else "n/a"
             pct100 = f'{rv["pct_vs_100"]:+.1f}%' if rv["pct_vs_100"] is not None else "n/a"
             pct200 = f'{rv["pct_vs_200"]:+.1f}%' if rv["pct_vs_200"] is not None else "n/a"
             block.append(
-                f'{rv["asset"]:<5}{price:>8} {pct:>9} 1M {pct100:>6} 2M {pct200:>7}'
+                f'{rv["asset"]:<5}{price:>7} {pct:>7} 1M {pct100:>6} 2M {pct200:>6}'
             )
         block.append("")
 
