@@ -75,6 +75,13 @@ hour twice a year (18:00 ET in summer, 17:00 ET in winter). Edit the cron in the
 workflow if you want a different time. Note GitHub's scheduled runs can be delayed
 several minutes under load.
 
+There's also a separate, earlier `workflow_dispatch` trigger at 1:06pm weekdays
+(20:06 UTC during PDT), fired by an external scheduler on **cron-job.org** — it is
+not defined anywhere in `daily-signals.yml`. If it ever misbehaves, check the
+cron-job.org dashboard rather than this repo's workflow file. The dedup-by-trading-date
+guard in `daily_signals.py` means this early trigger and the regular after-close
+schedule above both firing on the same day still only sends one Telegram message.
+
 ## Changing what's tracked
 
 Edit `watchlist.py`:
@@ -85,6 +92,10 @@ Edit `watchlist.py`:
 - `DUAL_GATES` — AND-combined multi-asset gates (risk-on only when every listed
   indicator passes, each on its own asset), e.g. the Golden Ratio SPY+TIP
   de-lever signal. Renders just the risk-on/off verdict, no raw band values.
+- `STAIR_STRATEGIES` — the "S&P Stair" 3-mode ladder from plain (no band) SPY and
+  TIP close-vs-200SMA reads: Risk-On (both above), Partial Risk-Off (SPY above,
+  TIP below), Risk-Off (SPY below, TIP ignored). A mode change shows in the
+  signal-change banner.
 - `EMERGENCY` — euphoria-valve guards (`threshold` = how far above its own
   200SMA an asset must run to trip). Normally invisible; a triggered check
   shows a `🆘 EMERGENCY` banner at the very top of the message, above the
@@ -92,10 +103,6 @@ Edit `watchlist.py`:
 - `RAW_ASSETS` — which tickers get the detailed raw-values block (price, SMA100,
   SMA200, each with %-vs-price). Empty by default — SPY/QQQ/TIP moved to
   `WATCHLIST` for a more compact display; TQQQ stays out of both and gets its
-- `STAIR_STRATEGIES` — the "S&P Stair" 3-mode ladder from plain (no band) SPY and
-  TIP close-vs-200SMA reads: Risk-On (both above), Partial Risk-Off (SPY above,
-  TIP below), Risk-Off (SPY below, TIP ignored). A mode change shows in the
-  signal-change banner.
   own raw block from the SQQQ Overextension strategy (uniquely shows its
   250-day median, not an SMA).
 - `WATCHLIST` — tickers to show a compact one-line price/%-change/SMA100/SMA200
