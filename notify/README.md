@@ -92,6 +92,10 @@ Edit `watchlist.py`:
 - `RAW_ASSETS` — which tickers get the detailed raw-values block (price, SMA100,
   SMA200, each with %-vs-price). Empty by default — SPY/QQQ/TIP moved to
   `WATCHLIST` for a more compact display; TQQQ stays out of both and gets its
+- `STAIR_STRATEGIES` — the "S&P Stair" 3-mode ladder from plain (no band) SPY and
+  TIP close-vs-200SMA reads: Risk-On (both above), Partial Risk-Off (SPY above,
+  TIP below), Risk-Off (SPY below, TIP ignored). A mode change shows in the
+  signal-change banner.
   own raw block from the SQQQ Overextension strategy (uniquely shows its
   250-day median, not an SMA).
 - `WATCHLIST` — tickers to show a compact one-line price/%-change/SMA100/SMA200

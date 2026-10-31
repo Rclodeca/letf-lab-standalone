@@ -53,6 +53,22 @@ DUAL_GATES = [
     },
 ]
 
+# "S&P Stair": a 3-mode risk ladder from two plain (no hysteresis band) daily
+# close-vs-200SMA reads — SPY as the equity gate, TIP as the bond-regime gate
+# (same pair as the Golden Ratio above, but graded instead of AND-combined):
+#   Risk-On           SPY close > its 200SMA AND TIP close > its 200SMA
+#   Partial Risk-Off  SPY close > its 200SMA, TIP close <= its 200SMA
+#   Risk-Off          SPY close <= its 200SMA (TIP is ignored)
+STAIR_STRATEGIES = [
+    {
+        "name": "S&P Stair",
+        "key": "sp_stair_signal",
+        "spy_asset": "SPY",
+        "tip_asset": "TIP",
+        "period": 200,
+    },
+]
+
 # Monthly "Triplet" momentum rotation (3-of-5 selection from a 14-asset
 # universe). Unlike the gate strategies this replaced, it doesn't reduce to a
 # risk-on/off boolean — it's a 14-asset momentum rank, dual-momentum filter

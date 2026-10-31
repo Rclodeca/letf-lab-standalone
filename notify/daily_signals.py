@@ -4,7 +4,8 @@ Computes the Triplet (3-of-5 momentum rotation) and HAA allocations, the
 SPY 200SMA Switch (buffered TQQQ/QQQ band strategy with a QQQ-euphoria
 guard), the SQQQ Overextension strategy (TQQQ melt-up/breakdown switch vs.
 its own 250-day median), the Golden Ratio SPY+TIP de-lever dual gate
-(risk-on/off verdict only, no raw band values), a simple SPY/QQQ/TIP/TQQQ
+(risk-on/off verdict only, no raw band values), the S&P Stair 3-mode
+SPY/TIP 200SMA ladder, a simple SPY/QQQ/TIP/TQQQ
 price-and-SMA/median raw-values panel, and a hidden-unless-triggered
 emergency euphoria-valve check — all defined in watchlist.py — diffs the
 discrete states against the previous run, and pushes a summary to Telegram.
@@ -49,6 +50,7 @@ from notify.watchlist import (
     RAW_ASSETS,
     RAW_ASSETS_200_ONLY,
     ROTATION_STRATEGIES,
+    STAIR_STRATEGIES,
     SWITCH_STRATEGIES,
     WATCHLIST,
 )
@@ -62,6 +64,10 @@ SWITCH_EMOJI = {"TQQQ": "🟢", "QQQ": "🟡", "CASH": "🆘"}
 # Display labels/emoji for the SQQQ Overextension strategy's 3 raw states.
 OVER_LABEL = {"normal": "Risk on", "over": "Overextended", "crashCash": "Risk off"}
 OVER_EMOJI = {"normal": "🟢", "over": "🟠", "crashCash": "🔴"}
+
+# Display labels/emoji for the S&P Stair strategy's 3 modes.
+STAIR_LABEL = {"on": "Risk-On", "partial": "Partial Risk-Off", "off": "Risk-Off"}
+STAIR_EMOJI = {"on": "🟢", "partial": "🟡", "off": "🔴"}
 
 # Display dot for boolean risk-on/risk-off verdicts (e.g. the Golden Ratio
 # dual gate).
@@ -130,6 +136,7 @@ def compute(prev_signals=None):
         | {s["spy_asset"] for s in SWITCH_STRATEGIES} | {s["qqq_asset"] for s in SWITCH_STRATEGIES}
         | {s["asset"] for s in OVEREXTENSION_STRATEGIES}
         | {i["asset"] for g in DUAL_GATES for i in g["indicators"]}
+        | {s["spy_asset"] for s in STAIR_STRATEGIES} | {s["tip_asset"] for s in STAIR_STRATEGIES}
     )
     prices_by_asset = {}
     for asset in sorted(assets):
@@ -143,7 +150,7 @@ def compute(prev_signals=None):
     meta = {}
     display = {
         "date": None, "raw": [], "watchlist": [], "emergency": [], "rotation": [], "haa": [],
-        "switch": [], "overextension": [], "dual_gate": [],
+        "switch": [], "overextension": [], "dual_gate": [], "stair": [],
     }
 
     # 1. Raw values panel — price/SMA100/SMA200 snapshot for SPY and QQQ, and
@@ -209,6 +216,26 @@ def compute(prev_signals=None):
         signals[key] = risk_on
         meta[key] = {"label": spec["name"], "kind": "verdict"}
         display["dual_gate"].append({"name": spec["name"], "risk_on": risk_on})
+
+    # 2c. S&P Stair — 3-mode ladder from plain close-vs-SMA reads on SPY and
+    # TIP (no hysteresis). SPY at/below its SMA is Risk-Off regardless of TIP.
+    for spec in STAIR_STRATEGIES:
+        spy_prices = prices_by_asset[spec["spy_asset"]]
+        tip_prices = prices_by_asset[spec["tip_asset"]]
+        spy_price, spy_sma = _latest(spy_prices), _sma(spy_prices, spec["period"])
+        tip_price, tip_sma = _latest(tip_prices), _sma(tip_prices, spec["period"])
+        if None in (spy_price, spy_sma, tip_price, tip_sma):
+            print(f"warn: stair strategy {spec['name']} skipped: not enough trailing history yet", file=sys.stderr)
+            continue
+        if spy_price <= spy_sma:
+            state = "off"
+        elif tip_price > tip_sma:
+            state = "on"
+        else:
+            state = "partial"
+        signals[spec["key"]] = state
+        meta[spec["key"]] = {"label": spec["name"], "kind": "stair"}
+        display["stair"].append({"name": spec["name"], "state": state})
 
     # 3. Monthly "Triplet" momentum rotation (3-of-5 selection). No
     # risk-on/off boolean here — two allocations are tracked: the CURRENT one
@@ -415,6 +442,8 @@ def _banner_lines(changes, meta):
             out.append(f'{SWITCH_EMOJI[new]} {info.get("label", key)}: {SWITCH_LABEL[old]} → {SWITCH_LABEL[new]}')
         elif info.get("kind") == "overextension":
             out.append(f'{OVER_EMOJI[new]} {info.get("label", key)}: {OVER_LABEL[old]} → {OVER_LABEL[new]}')
+        elif info.get("kind") == "stair":
+            out.append(f'{STAIR_EMOJI[new]} {info.get("label", key)}: {STAIR_LABEL[old]} → {STAIR_LABEL[new]}')
         elif info.get("kind") == "verdict":
             word = "RISK-ON" if new else "RISK-OFF"
             out.append(f'{SIGNAL_DOT[new]} {info.get("label", key)} now {word}')
@@ -509,6 +538,9 @@ def format_message(display, changes, meta):
     for dg in display["dual_gate"]:
         word = "RISK-ON" if dg["risk_on"] else "RISK-OFF"
         lines.append(f'{dg["name"]}  {SIGNAL_DOT[dg["risk_on"]]} {word}')
+
+    for st in display["stair"]:
+        lines.append(f'{st["name"]}  {STAIR_EMOJI[st["state"]]} {STAIR_LABEL[st["state"]]}')
 
     # Raw values panel — monospace (<pre>) price/SMA snapshot for SPY, QQQ,
     # and TIP (TIP has no SMA100 row), plus price/median for TQQQ.
