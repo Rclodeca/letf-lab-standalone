@@ -1,11 +1,12 @@
 {
-  "date": "2026-10-30",
+  "date": "2026-11-02",
   "signals": {
     "QQQ_emergency": false,
     "SPY_emergency": false,
     "golden_ratio_signal": false,
-    "haa_signal": "BIL 100%",
-    "rotation_3of5_signal": "PDBC 40%, EWJ 40%, SSO 20%",
+    "haa_signal": "PDBC 25%, SSO 25%, QLD 25%, EFO 25%",
+    "rotation_3of5_signal": "PDBC 40%, VGK 40%, QLD 20%",
+    "sp_stair_signal": "partial",
     "spy_switch_signal": "TQQQ",
     "spy_switch_signal_base": "TQQQ",
     "sqqq_overextension_signal": "normal"
