@@ -244,26 +244,39 @@ def compute(prev_signals=None):
     # month's rebalance would be if the month ended today. Only the current
     # allocation is diffable/banner-worthy — it changes exactly once a month,
     # on an actual rebalance; the preview naturally wiggles day to day and
-    # would just be banner noise.
+    # would just be banner noise. CURRENT is computed once, on the first run
+    # of each calendar month, then carried forward from prev_signals (hidden
+    # `_month` key, like the Switch's `_base`) so a revised/skewed price
+    # history later in the month can't flip it.
     if ROTATION_STRATEGIES:
         rot_closes = pd.concat(
             {t: prices_by_asset[t] for t in rot.UNIVERSE + [rot.CASH]}, axis=1, sort=True
         ).dropna()
         last_month_end = rot.last_completed_rebalance_date(rot_closes)
+        month_key = rot_closes.index.max().strftime("%Y-%m")
         for spec in ROTATION_STRATEGIES:
+            key = spec["key"]
+            month_state_key = f"{key}_month"
             try:
                 preview = rot.compute_allocation(rot_closes)
-                current = (
-                    rot.compute_allocation(rot_closes.loc[:last_month_end])
-                    if last_month_end is not None else preview
+                held = (
+                    prev_signals.get(key)
+                    if prev_signals.get(month_state_key) == month_key else None
                 )
+                if held is not None:
+                    current_alloc = held
+                else:
+                    current = (
+                        rot.compute_allocation(rot_closes.loc[:last_month_end])
+                        if last_month_end is not None else preview
+                    )
+                    current_alloc = rot.alloc_str(current["allocation"])
             except ValueError as exc:  # not enough trailing history yet
                 print(f"warn: rotation strategy {spec['name']} skipped: {exc}", file=sys.stderr)
                 continue
-            current_alloc = rot.alloc_str(current["allocation"])
             preview_alloc = rot.alloc_str(preview["allocation"])
-            key = spec["key"]
             signals[key] = current_alloc
+            signals[month_state_key] = month_key
             meta[key] = {"label": spec["name"], "kind": "allocation"}
             display["rotation"].append({
                 "name": spec["name"],
@@ -276,27 +289,40 @@ def compute(prev_signals=None):
     # the Triplet rotation above, same month-end cadence — CURRENT is decided
     # at last month's close and held fixed all month; PREVIEW is a daily
     # recalculation of what the next rebalance would be if the month ended
-    # today.
+    # today. CURRENT is computed once, on the first run of each calendar
+    # month, then carried forward from prev_signals (hidden `_month` key,
+    # like the Switch's `_base`) so a revised/skewed price history later in
+    # the month can't flip it — the canary can sit within a hair of zero.
     if HAA_STRATEGIES:
         haa_universe = sorted(set(haa.OFFENSIVE_UNIVERSE) | {haa.CANARY} | set(haa.DEFENSIVE_CANDIDATES))
         haa_closes = pd.concat(
             {t: prices_by_asset[t] for t in haa_universe}, axis=1, sort=True
         ).dropna()
         last_month_end = rot.last_completed_rebalance_date(haa_closes)
+        month_key = haa_closes.index.max().strftime("%Y-%m")
         for spec in HAA_STRATEGIES:
+            key = spec["key"]
+            month_state_key = f"{key}_month"
             try:
                 preview = haa.compute_allocation(haa_closes)
-                current = (
-                    haa.compute_allocation(haa_closes.loc[:last_month_end])
-                    if last_month_end is not None else preview
+                held = (
+                    prev_signals.get(key)
+                    if prev_signals.get(month_state_key) == month_key else None
                 )
+                if held is not None:
+                    current_alloc = held
+                else:
+                    current = (
+                        haa.compute_allocation(haa_closes.loc[:last_month_end])
+                        if last_month_end is not None else preview
+                    )
+                    current_alloc = rot.alloc_str(current["allocation"])
             except ValueError as exc:  # not enough trailing history yet
                 print(f"warn: HAA strategy {spec['name']} skipped: {exc}", file=sys.stderr)
                 continue
-            current_alloc = rot.alloc_str(current["allocation"])
             preview_alloc = rot.alloc_str(preview["allocation"])
-            key = spec["key"]
             signals[key] = current_alloc
+            signals[month_state_key] = month_key
             meta[key] = {"label": spec["name"], "kind": "allocation"}
             display["haa"].append({
                 "name": spec["name"],

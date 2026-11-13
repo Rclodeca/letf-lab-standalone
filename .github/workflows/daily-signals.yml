@@ -53,13 +53,23 @@ jobs:
       - name: Install backend package
         run: pip install -e ./backend
 
-      # Persist the parquet price cache between runs so daily runs only fetch
-      # recent bars instead of full history. Keyed by week so it refreshes.
+      # Persist the parquet price cache between runs on the SAME day so reruns
+      # only fetch recent bars. Keyed by date, with no restore-keys fallback:
+      # GitHub caches are immutable per key, so a fixed key froze the history
+      # at its first save while each run re-downloaded only the last ~30 days
+      # on top of it. Prices are dividend-adjusted, so that mixed adjustment
+      # bases and could flip near-zero momentum scores (e.g. the HAA TIP
+      # canary). A fresh key each day forces a consistent full-history fetch
+      # on the first run of the day.
+      - name: Get date for cache key
+        id: cache-date
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
       - name: Restore price cache
         uses: actions/cache@v4
         with:
           path: data/prices
-          key: price-cache-v1
+          key: price-cache-v2-${{ steps.cache-date.outputs.date }}
 
       - name: Compute signals and notify
         run: python -m notify.daily_signals ${{ inputs.force && '--force' || '' }}
