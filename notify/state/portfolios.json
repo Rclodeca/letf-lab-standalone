@@ -1,0 +1,156 @@
+{
+  "generated_at": "2026-11-20T23:35:11Z",
+  "price_date": "2026-11-20",
+  "prices": {
+    "AVUV": 114.4,
+    "BIL": 91.59,
+    "BTGD": 15.28,
+    "BWX": 21.09,
+    "CTAP": 23.03,
+    "DBC": 29.32,
+    "DBMF": 31.45,
+    "EET": 22.91,
+    "EFO": 60.45,
+    "EWJ": 83.43,
+    "FNGU": 16.38,
+    "GDE": 42.88,
+    "GLDM": 69.71,
+    "GOVZ": 33.47,
+    "IALT": 28.23,
+    "IEF": 91.65,
+    "IEMG": 65.69,
+    "IWM": 256.61,
+    "JPFP": 43.5925,
+    "KMLM": 28.99,
+    "MATE": 27.8528,
+    "NTSD": 40.7645,
+    "PDBC": 17.47,
+    "QLD": 63.52,
+    "QQQ": 608.45,
+    "RSIT": 18.63,
+    "RSSB": 27.31,
+    "RSST": 30.27,
+    "RSSX": 19.09,
+    "SCZ": 76.64,
+    "SOXL": 30.88,
+    "SPMO": 118.08,
+    "SPY": 689.81,
+    "SSO": 56.05,
+    "TECL": 92.99,
+    "TIP": 105.74,
+    "TLT": 81.45,
+    "TQQQ": 41.2,
+    "UBT": 29.31,
+    "UGL": 32.26,
+    "UPRO": 105.4,
+    "URE": 62.73,
+    "UST": 40.06,
+    "UWM": 47.68,
+    "VBR": 231.38,
+    "VEA": 63.62,
+    "VGK": 82.61,
+    "VGLT": 52.26,
+    "VNQ": 92.56,
+    "VNQI": 41.92,
+    "VOO": 635.54,
+    "VTIP": 48.74,
+    "VWO": 50.62
+  },
+  "portfolios": [
+    {
+      "id": "sp_stair",
+      "name": "S&P Stair",
+      "state": "off",
+      "state_label": "Risk-Off",
+      "targets": {
+        "RSIT": 0.2,
+        "RSSX": 0.1,
+        "GLDM": 0.1,
+        "DBMF": 0.1,
+        "GOVZ": 0.1,
+        "PDBC": 0.1,
+        "VOO": 0.1,
+        "VTIP": 0.1,
+        "IALT": 0.1
+      }
+    },
+    {
+      "id": "haa",
+      "name": "HAA",
+      "state": "PDBC 25%, SSO 25%, EFO 25%, UWM 25%",
+      "state_label": "Monthly allocation",
+      "targets": {
+        "PDBC": 0.25,
+        "SSO": 0.25,
+        "EFO": 0.25,
+        "UWM": 0.25
+      }
+    },
+    {
+      "id": "triplet",
+      "name": "Triplet",
+      "state": "PDBC 40%, VGK 40%, QLD 20%",
+      "state_label": "Monthly allocation",
+      "targets": {
+        "PDBC": 0.4,
+        "VGK": 0.4,
+        "QLD": 0.2
+      }
+    },
+    {
+      "id": "golden_ratio",
+      "name": "Golden Ratio",
+      "state": "off",
+      "state_label": "Risk-Off",
+      "targets": {
+        "SPMO": 0.2,
+        "VBR": 0.2,
+        "KMLM": 0.2,
+        "GLDM": 0.2,
+        "VGLT": 0.2
+      }
+    },
+    {
+      "id": "static_sso",
+      "name": "Static SSO",
+      "state": "static",
+      "state_label": "Static",
+      "targets": {
+        "SSO": 0.7,
+        "GLDM": 0.1,
+        "DBMF": 0.2
+      }
+    },
+    {
+      "id": "return_stacked",
+      "name": "Return Stacked",
+      "state": "static",
+      "state_label": "Static",
+      "targets": {
+        "RSSB": 0.2,
+        "NTSD": 0.2,
+        "RSST": 0.2,
+        "MATE": 0.2,
+        "GDE": 0.2
+      }
+    },
+    {
+      "id": "static_tech",
+      "name": "Static Tech",
+      "state": "static",
+      "state_label": "Static",
+      "targets": {
+        "TQQQ": 0.1,
+        "SOXL": 0.1,
+        "TECL": 0.1,
+        "FNGU": 0.1,
+        "AVUV": 0.1,
+        "IALT": 0.1,
+        "BTGD": 0.1,
+        "RSIT": 0.1,
+        "CTAP": 0.1,
+        "JPFP": 0.1
+      }
+    }
+  ]
+}
