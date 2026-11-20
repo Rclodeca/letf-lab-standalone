@@ -650,7 +650,11 @@ def latest_prices(tickers):
             ps.refresh(t, days=30)
         except Exception as exc:  # non-fatal: fall back to whatever is cached
             print(f"warn: refresh({t}) failed: {exc}", file=sys.stderr)
-        price = _latest(ps.get_close_series(t))
+        try:
+            price = _latest(ps.get_close_series(t))
+        except Exception as exc:  # e.g. a full-history fetch on a cold cache
+            print(f"warn: get_close_series({t}) failed: {exc}", file=sys.stderr)
+            price = None
         if price is None:
             print(f"warn: no price for {t}; omitted from portfolios.json", file=sys.stderr)
             continue
@@ -661,6 +665,15 @@ def latest_prices(tickers):
 def portfolios_payload(signals, price_date):
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     return pf.build_payload(signals, latest_prices(pf.all_tickers()), price_date, generated_at)
+
+
+def publish_portfolios(signals, price_date):
+    """write_portfolios, but never fatal: the rebalancer site's data is a
+    side output and must not cost the day's Telegram alert or state commit."""
+    try:
+        write_portfolios(signals, price_date)
+    except Exception as exc:
+        print(f"warn: portfolios.json not published: {exc}", file=sys.stderr)
 
 
 def write_portfolios(signals, price_date):
@@ -698,20 +711,18 @@ def main():
     # fallback against GitHub's schedule event silently dropping (see
     # daily-signals.yml). On a normal day both fire and reach here with the
     # same trading date, so skip the second to avoid a duplicate message.
-    already_sent = not args.force and display["date"] and display["date"] == prev_state.get("date")
-
-    # Publish the rebalancer site's data on every run, so a same-day rerun
-    # still refreshes prices. A deduped rerun publishes the SAVED signals
-    # (what Telegram already sent) so the site never disagrees with the alert.
-    write_portfolios(prev_state.get("signals", {}) if already_sent else signals, display["date"])
-
-    if already_sent:
+    if not args.force and display["date"] and display["date"] == prev_state.get("date"):
+        # Still publish the rebalancer site's data, so a same-day rerun
+        # refreshes prices — but from the SAVED signals (what Telegram
+        # already sent) so the site never disagrees with the alert.
+        publish_portfolios(prev_state.get("signals", {}), display["date"])
         print(f"Already notified for {display['date']}; skipping duplicate send.")
         return 0
 
     send_telegram(message)
     save_state(signals, display)
     print("Sent to Telegram and saved state.")
+    publish_portfolios(signals, display["date"])
     return 0
 
 
