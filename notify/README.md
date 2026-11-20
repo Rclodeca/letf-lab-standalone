@@ -8,6 +8,11 @@ vote-of-2 signals plus six standalone **SMA-200** checks, and pushes a summary t
 - `daily_signals.py` — computes signals, diffs vs the last run, sends Telegram.
 - `state/last_signals.json` — previous run's booleans; the workflow commits it back
   each day so "Changed today" works. Do not edit by hand (except to test).
+- `portfolios.py` + `state/portfolios.json` — each portfolio's current state, target
+  weights and the latest close of every fund, published on every run for the
+  rebalancer site (ryanclode.com/port-rebalance). Edit `portfolios.py` to change a
+  portfolio's funds/weights; the JSON is generated (a deduped same-day rerun
+  republishes the saved signals with fresh prices).
 - `../.github/workflows/daily-signals.yml` — the schedule + job.
 
 ## What the message looks like
