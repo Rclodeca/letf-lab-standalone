@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-19",
+  "date": "2026-11-20",
   "signals": {
     "QQQ_emergency": false,
     "SPY_emergency": false,
@@ -9,8 +9,8 @@
     "rotation_3of5_signal": "PDBC 40%, VGK 40%, QLD 20%",
     "rotation_3of5_signal_month": "2026-11",
     "sp_stair_signal": "off",
-    "spy_switch_signal": "TQQQ",
-    "spy_switch_signal_base": "TQQQ",
+    "spy_switch_signal": "QQQ",
+    "spy_switch_signal_base": "QQQ",
     "sqqq_overextension_signal": "normal"
   }
 }
