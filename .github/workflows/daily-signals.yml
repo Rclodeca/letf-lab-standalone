@@ -78,8 +78,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet -- notify/state/last_signals.json; then
-            git add notify/state/last_signals.json
+          git add notify/state/last_signals.json notify/state/portfolios.json
+          if ! git diff --cached --quiet; then
             git commit -m "chore: update signal state [skip ci]"
             git push
           else

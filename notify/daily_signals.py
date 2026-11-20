@@ -29,7 +29,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -42,6 +42,7 @@ from ai_swing.indicators.evaluator import evaluate_indicator
 from ai_swing.scoring import haa
 from ai_swing.scoring import rotation_3of5 as rot
 
+from notify import portfolios as pf
 from notify.watchlist import (
     DUAL_GATES,
     EMERGENCY,
@@ -56,6 +57,8 @@ from notify.watchlist import (
 )
 
 STATE_PATH = Path(__file__).parent / "state" / "last_signals.json"
+# Read by the rebalancer site (ryanclode.com/port-rebalance) — see portfolios.py.
+PORTFOLIOS_PATH = Path(__file__).parent / "state" / "portfolios.json"
 
 # Display labels/emoji for the SPY 200SMA Switch's 3 states.
 SWITCH_LABEL = {"TQQQ": "Risk on", "QQQ": "Risk off", "CASH": "EMERGENCY CASH"}
@@ -636,6 +639,50 @@ def save_state(signals, display):
     STATE_PATH.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
+def latest_prices(tickers):
+    """Latest close for each ticker. A ticker that fails to refresh falls back
+    to its cache; one with no data at all is left out (the site then asks for
+    a manual price)."""
+    ps = get_price_service()
+    out = {}
+    for t in tickers:
+        try:
+            ps.refresh(t, days=30)
+        except Exception as exc:  # non-fatal: fall back to whatever is cached
+            print(f"warn: refresh({t}) failed: {exc}", file=sys.stderr)
+        try:
+            price = _latest(ps.get_close_series(t))
+        except Exception as exc:  # e.g. a full-history fetch on a cold cache
+            print(f"warn: get_close_series({t}) failed: {exc}", file=sys.stderr)
+            price = None
+        if price is None:
+            print(f"warn: no price for {t}; omitted from portfolios.json", file=sys.stderr)
+            continue
+        out[t] = round(price, 4)
+    return out
+
+
+def portfolios_payload(signals, price_date):
+    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return pf.build_payload(signals, latest_prices(pf.all_tickers()), price_date, generated_at)
+
+
+def publish_portfolios(signals, price_date):
+    """write_portfolios, but never fatal: the rebalancer site's data is a
+    side output and must not cost the day's Telegram alert or state commit."""
+    try:
+        write_portfolios(signals, price_date)
+    except Exception as exc:
+        print(f"warn: portfolios.json not published: {exc}", file=sys.stderr)
+
+
+def write_portfolios(signals, price_date):
+    payload = portfolios_payload(signals, price_date)
+    PORTFOLIOS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    PORTFOLIOS_PATH.write_text(json.dumps(payload, indent=2) + "\n")
+    return payload
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
@@ -657,6 +704,7 @@ def main():
 
     if args.dry_run:
         print(message)
+        print(json.dumps(portfolios_payload(signals, display["date"]), indent=2))
         return 0
 
     # The workflow fires two staggered schedule triggers per day as a
@@ -664,12 +712,17 @@ def main():
     # daily-signals.yml). On a normal day both fire and reach here with the
     # same trading date, so skip the second to avoid a duplicate message.
     if not args.force and display["date"] and display["date"] == prev_state.get("date"):
+        # Still publish the rebalancer site's data, so a same-day rerun
+        # refreshes prices — but from the SAVED signals (what Telegram
+        # already sent) so the site never disagrees with the alert.
+        publish_portfolios(prev_state.get("signals", {}), display["date"])
         print(f"Already notified for {display['date']}; skipping duplicate send.")
         return 0
 
     send_telegram(message)
     save_state(signals, display)
     print("Sent to Telegram and saved state.")
+    publish_portfolios(signals, display["date"])
     return 0
 
 
